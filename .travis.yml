@@ -30,6 +30,7 @@ env:
     - JDK="adopt-openj9@"
 
 stages:
+  - lint
   - base
   - test
   - name: deploy
@@ -43,6 +44,16 @@ jobs:
       stage: test
   include:
     - <<: *reference_build
+      stage: lint
+      name: dependencies_updates
+      script:
+        - travis_retry ./gradlew clean dependencyUpdates
+    - <<: *reference_build
+      stage: lint
+      name: lint
+      script:
+        - travis_retry ./gradlew clean ktlintCheck
+    - <<: *reference_build
       stage: base
       after_success: bash <(curl -s https://codecov.io/bash)
       script:
@@ -53,6 +64,8 @@ jobs:
         - echo "Here we should setup secure signing"
       script:
         - travis_retry ./gradlew shadow dokka githubRelease publish
+  allow_failures:
+    - name: dependencies_updates
 
 before_install:
   - travis_retry git clone --depth 1 $GRAVIS_REPO $GRAVIS
